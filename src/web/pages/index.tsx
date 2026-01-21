@@ -9,6 +9,27 @@ const VOID_PURPLE = "#1a0b2e";
 const TERMINAL_GREEN = "#ff41b4";
 const ACCENT_PINK = "#ff41b4";
 
+// Mobile detection hook
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  const [hasTouchScreen, setHasTouchScreen] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      const width = window.innerWidth;
+      const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      setIsMobile(width < 768);
+      setHasTouchScreen(hasTouch);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  
+  return { isMobile, hasTouchScreen };
+}
+
 // Boot sequence lines
 const BOOT_SEQUENCE = [
   "INITIALIZING PHILMODS PROTOCOL...",
@@ -435,10 +456,12 @@ function FloatingBadge({ text, delay }: { text: string; delay: number }) {
   );
 }
 
-// Floating code particles
-function CodeParticles({ count = 50 }: { count?: number }) {
+// Floating code particles - reduced for mobile
+function CodeParticles({ count = 50, isMobile = false }: { count?: number; isMobile?: boolean }) {
+  const actualCount = isMobile ? Math.floor(count / 3) : count;
+  
   const particles = useMemo(() => {
-    return Array.from({ length: count }, (_, i) => ({
+    return Array.from({ length: actualCount }, (_, i) => ({
       id: i,
       x: (Math.random() - 0.5) * 30,
       y: (Math.random() - 0.5) * 20,
@@ -446,7 +469,7 @@ function CodeParticles({ count = 50 }: { count?: number }) {
       speed: 0.2 + Math.random() * 0.5,
       size: 0.1 + Math.random() * 0.15
     }));
-  }, [count]);
+  }, [actualCount]);
 
   return (
     <group>
@@ -478,23 +501,31 @@ function FloatingCodeParticle({ x, y, z, speed, size }: {
   );
 }
 
-// MEOW Character 3D Model
-function MeowCharacter({ scrollProgress }: { scrollProgress: number }) {
+// MEOW Character 3D Model - optimized for mobile
+function MeowCharacter({ scrollProgress, isMobile = false }: { scrollProgress: number; isMobile?: boolean }) {
   const groupRef = useRef<THREE.Group>(null);
   const { scene } = useGLTF('/meow.gltf');
   
+  // Reduce animation intensity on mobile
+  const floatSpeed = isMobile ? 1.0 : 1.5;
+  const rotationIntensity = isMobile ? 0.15 : 0.3;
+  const floatIntensity = isMobile ? 0.25 : 0.5;
+  const modelScale = isMobile ? 0.65 : 0.8;
+  
   useFrame((state) => {
     if (groupRef.current) {
-      // Scroll-based Y rotation
-      groupRef.current.rotation.y = state.clock.elapsedTime * 0.3 + scrollProgress * Math.PI * 2;
+      // Scroll-based Y rotation - slower on mobile
+      const rotationSpeed = isMobile ? 0.15 : 0.3;
+      groupRef.current.rotation.y = state.clock.elapsedTime * rotationSpeed + scrollProgress * Math.PI * 2;
       // Subtle breathing-like movement
-      groupRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.2) * 0.1;
+      const breathSpeed = isMobile ? 0.1 : 0.2;
+      groupRef.current.rotation.x = Math.sin(state.clock.elapsedTime * breathSpeed) * 0.1;
     }
   });
 
   return (
-    <Float speed={1.5} rotationIntensity={0.3} floatIntensity={0.5}>
-      <group ref={groupRef} scale={0.8} position={[0, 0, 0]}>
+    <Float speed={floatSpeed} rotationIntensity={rotationIntensity} floatIntensity={floatIntensity}>
+      <group ref={groupRef} scale={modelScale} position={[0, 0, 0]}>
         <primitive object={scene} />
       </group>
     </Float>
@@ -514,9 +545,13 @@ function ModelLoadingFallback() {
   );
 }
 
-// Holographic Emitter Platform
-function HolographicEmitter({ scrollProgress }: { scrollProgress: number }) {
+// Holographic Emitter Platform - optimized for mobile
+function HolographicEmitter({ scrollProgress, isMobile = false }: { scrollProgress: number; isMobile?: boolean }) {
   const groupRef = useRef<THREE.Group>(null);
+  
+  // Reduce geometry complexity on mobile
+  const platformSegments = isMobile ? 16 : 32;
+  const ringSegments = isMobile ? 50 : 100;
 
   useFrame((state) => {
     if (groupRef.current) {
@@ -528,74 +563,84 @@ function HolographicEmitter({ scrollProgress }: { scrollProgress: number }) {
     <group ref={groupRef} position={[0, -0.5, 0]}>
       {/* Platform base */}
       <mesh position={[0, -2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[2, 2.2, 0.3, 32]} />
+        <cylinderGeometry args={[2, 2.2, 0.3, platformSegments]} />
         <meshStandardMaterial color="#2a1848" metalness={0.8} roughness={0.2} />
       </mesh>
       {/* Glowing ring */}
       <mesh position={[0, -1.85, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[1.8, 0.05, 16, 100]} />
+        <torusGeometry args={[1.8, 0.05, 16, ringSegments]} />
         <meshBasicMaterial color={TERMINAL_GREEN} />
       </mesh>
       {/* MEOW Character Model */}
       <Suspense fallback={<ModelLoadingFallback />}>
-        <MeowCharacter scrollProgress={scrollProgress} />
+        <MeowCharacter scrollProgress={scrollProgress} isMobile={isMobile} />
       </Suspense>
-      {/* Holographic cone effect */}
-      <mesh position={[0, -1, 0]}>
-        <cylinderGeometry args={[0.3, 1.5, 2, 32, 1, true]} />
-        <meshBasicMaterial color={TERMINAL_GREEN} transparent opacity={0.1} side={THREE.DoubleSide} />
-      </mesh>
+      {/* Holographic cone effect - simplified on mobile */}
+      {!isMobile && (
+        <mesh position={[0, -1, 0]}>
+          <cylinderGeometry args={[0.3, 1.5, 2, platformSegments, 1, true]} />
+          <meshBasicMaterial color={TERMINAL_GREEN} transparent opacity={0.1} side={THREE.DoubleSide} />
+        </mesh>
+      )}
     </group>
   );
 }
 
-// Main 3D Scene
-function Scene({ scrollProgress, started }: { scrollProgress: number; started: boolean }) {
+// Main 3D Scene - with mobile optimizations
+function Scene({ scrollProgress, started, isMobile = false }: { scrollProgress: number; started: boolean; isMobile?: boolean }) {
   const { camera } = useThree();
 
   useEffect(() => {
     if (started) {
       gsap.to(camera.position, {
-        z: 8,
+        z: isMobile ? 9 : 8, // Slightly further back on mobile for better framing
         duration: 2,
         ease: "power2.inOut",
       });
     }
-  }, [started, camera]);
+  }, [started, camera, isMobile]);
 
   useFrame(() => {
-    const targetZ = 8 - scrollProgress * 40;
+    const targetZ = (isMobile ? 9 : 8) - scrollProgress * (isMobile ? 30 : 40);
     camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetZ, 0.05);
   });
+  
+  // Mobile-optimized star count
+  const starCount = isMobile ? 1500 : 5000;
+  const tunnelCount = isMobile ? 10 : 20;
 
   return (
     <>
-      {/* Enhanced lighting for MEOW model */}
-      <ambientLight intensity={0.6} />
-      <pointLight position={[10, 10, 10]} intensity={1.5} color={TERMINAL_GREEN} />
-      <pointLight position={[-10, -10, -10]} intensity={0.5} color={ACCENT_PINK} />
-      {/* Spotlight from above */}
-      <spotLight 
-        position={[0, 8, 5]} 
-        intensity={2} 
-        color={TERMINAL_GREEN} 
-        angle={0.5} 
-        penumbra={0.5}
-        castShadow
-      />
-      {/* Rim light from behind */}
-      <pointLight position={[0, 2, -5]} intensity={1} color={TERMINAL_GREEN} />
+      {/* Lighting - simplified on mobile */}
+      <ambientLight intensity={isMobile ? 0.8 : 0.6} />
+      <pointLight position={[10, 10, 10]} intensity={isMobile ? 1.2 : 1.5} color={TERMINAL_GREEN} />
+      {!isMobile && (
+        <>
+          <pointLight position={[-10, -10, -10]} intensity={0.5} color={ACCENT_PINK} />
+          {/* Spotlight from above - disabled on mobile for performance */}
+          <spotLight 
+            position={[0, 8, 5]} 
+            intensity={2} 
+            color={TERMINAL_GREEN} 
+            angle={0.5} 
+            penumbra={0.5}
+            castShadow={false}
+          />
+          {/* Rim light from behind */}
+          <pointLight position={[0, 2, -5]} intensity={1} color={TERMINAL_GREEN} />
+        </>
+      )}
       {/* Front fill light */}
-      <pointLight position={[0, 0, 5]} intensity={0.8} color="#ffffff" />
+      <pointLight position={[0, 0, 5]} intensity={isMobile ? 1.0 : 0.8} color="#ffffff" />
       
-      <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-      <CodeParticles count={40} />
+      <Stars radius={100} depth={50} count={starCount} factor={4} saturation={0} fade speed={1} />
+      <CodeParticles count={40} isMobile={isMobile} />
       <group position={[0, 0, 0]}>
-        <HolographicEmitter scrollProgress={scrollProgress} />
+        <HolographicEmitter scrollProgress={scrollProgress} isMobile={isMobile} />
       </group>
 
-      {/* Tunnel elements */}
-      {[...Array(20)].map((_, i) => (
+      {/* Tunnel elements - reduced on mobile */}
+      {[...Array(tunnelCount)].map((_, i) => (
         <mesh key={i} position={[
           (Math.random() - 0.5) * 15,
           (Math.random() - 0.5) * 10,
@@ -1704,6 +1749,7 @@ function Index() {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [nostalgiaMode, setNostalgiaMode] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [hasWebGL, setHasWebGL] = useState(true);
   const [selectedProject, setSelectedProject] = useState<typeof PROJECTS[0] | null>(null);
   const [wireframeMode, setWireframeMode] = useState(false);
   const [matrixMode, setMatrixMode] = useState(false);
@@ -1725,20 +1771,50 @@ function Index() {
     return () => window.removeEventListener('keydown', handleEsc);
   }, [matrixMode]);
 
+  // Mobile detection with WebGL check
   useEffect(() => {
-    setIsMobile(window.innerWidth < 768 || !window.WebGLRenderingContext);
+    const checkMobile = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 768);
+    };
+    
+    // Check WebGL support
+    const checkWebGL = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        const hasGL = !!(window.WebGLRenderingContext && 
+          (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+        setHasWebGL(hasGL);
+      } catch (e) {
+        setHasWebGL(false);
+      }
+    };
+    
+    checkMobile();
+    checkWebGL();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Touch-optimized scroll handler
   useEffect(() => {
+    let ticking = false;
+    
     const handleScroll = () => {
-      if (!containerRef.current) return;
-      const scrollTop = window.scrollY;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const progress = Math.min(scrollTop / docHeight, 1);
-      setScrollProgress(progress);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          if (!containerRef.current) return;
+          const scrollTop = window.scrollY;
+          const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+          const progress = Math.min(scrollTop / docHeight, 1);
+          setScrollProgress(progress);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -1746,7 +1822,8 @@ function Index() {
     setStarted(true);
   };
 
-  if (isMobile) {
+  // Full fallback only if no WebGL support
+  if (!hasWebGL) {
     return (
       <>
         <StatusBeacon />
@@ -1768,15 +1845,21 @@ function Index() {
       <MatrixRain active={matrixMode} />
       <WireframeRat mitSectionEndRef={mitSectionEndRef} contactSectionStartRef={contactSectionStartRef} />
 
-      {/* Fixed 3D Canvas */}
+      {/* Fixed 3D Canvas - with mobile optimizations */}
       <div className="fixed inset-0 z-0">
         <Canvas
-          camera={{ position: [0, 0, 15], fov: 60 }}
-          gl={{ antialias: true, alpha: true }}
+          camera={{ position: [0, 0, isMobile ? 16 : 15], fov: isMobile ? 55 : 60 }}
+          gl={{ 
+            antialias: !isMobile, // Disable antialiasing on mobile for performance
+            alpha: true,
+            powerPreference: isMobile ? "low-power" : "high-performance",
+            precision: isMobile ? "lowp" : "highp"
+          }}
+          dpr={isMobile ? [1, 1.5] : [1, 2]} // Lower pixel ratio on mobile
           style={{ background: VOID_PURPLE }}
         >
           <Suspense fallback={null}>
-            <Scene scrollProgress={scrollProgress} started={started} />
+            <Scene scrollProgress={scrollProgress} started={started} isMobile={isMobile} />
           </Suspense>
         </Canvas>
       </div>

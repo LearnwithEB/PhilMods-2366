@@ -1446,16 +1446,6 @@ const SERVICES = [
     icon: "🦴",
     title: "Rigging & Animation",
     description: "Advanced skeletal systems with IK/FK switching, facial rigs, and animation-ready setups for games and film."
-  },
-  {
-    icon: "⚡",
-    title: "Unreal Engine Integration",
-    description: "Seamless integration with UE5 including Nanite, Lumen, MetaHumans, and real-time visualization."
-  },
-  {
-    icon: "🔧",
-    title: "Technical Art Consultation",
-    description: "Expert guidance on pipelines, optimization strategies, and best practices for 3D production workflows."
   }
 ];
 

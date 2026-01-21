@@ -786,8 +786,8 @@ function MatrixRain({ active }: { active: boolean }) {
   );
 }
 
-// Wireframe Rat Component - Runs across screen at 30% scroll
-function WireframeRat({ scrollProgress }: { scrollProgress: number }) {
+// Wireframe Rat Component - Runs across screen during section transitions
+function WireframeRat({ projectsEndRef, servicesStartRef }: { projectsEndRef: React.RefObject<HTMLDivElement | null>; servicesStartRef: React.RefObject<HTMLDivElement | null> }) {
   const [hasRun, setHasRun] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [position, setPosition] = useState(-30);
@@ -795,51 +795,75 @@ function WireframeRat({ scrollProgress }: { scrollProgress: number }) {
   const animationRef = useRef<number | null>(null);
   
   useEffect(() => {
-    // Trigger rat run at ~30% scroll progress (earlier trigger)
-    if (scrollProgress >= 0.25 && scrollProgress <= 0.40 && !hasRun && !isRunning) {
-      setIsRunning(true);
-      setPosition(-30);
+    const checkPosition = () => {
+      if (!projectsEndRef.current || !servicesStartRef.current || hasRun || isRunning) return;
       
-      const startTime = Date.now();
-      const duration = 5000; // 5 seconds to cross screen (slower)
+      const projectsRect = projectsEndRef.current.getBoundingClientRect();
+      const servicesRect = servicesStartRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
       
-      const animate = () => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        
-        // Eased movement - slower acceleration
-        const eased = progress < 0.5 
-          ? 2 * progress * progress 
-          : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-        
-        const newPos = -30 + (eased * 160); // -30 to 130vw
-        setPosition(newPos);
-        legRef.current += 0.3; // Slower leg movement
-        
-        if (progress < 1) {
-          animationRef.current = requestAnimationFrame(animate);
-        } else {
-          setIsRunning(false);
-          setHasRun(true);
-        }
-      };
+      // Trigger when user is in transition zone: projects section is mostly scrolled past 
+      // and services section is approaching
+      const projectsScrolledPast = projectsRect.bottom < viewportHeight * 0.6;
+      const servicesApproaching = servicesRect.top < viewportHeight * 1.2;
       
-      animationRef.current = requestAnimationFrame(animate);
-    }
+      if (projectsScrolledPast && servicesApproaching) {
+        setIsRunning(true);
+        setPosition(-30);
+        
+        const startTime = Date.now();
+        const duration = 4500; // 4.5 seconds to cross - quick scamper
+        
+        const animate = () => {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          
+          // Eased movement - playful acceleration
+          const eased = progress < 0.3 
+            ? 1.5 * progress * progress 
+            : 1 - Math.pow(-2 * progress + 2, 2) / 2.5;
+          
+          const newPos = -30 + (eased * 160); // -30 to 130vw
+          setPosition(newPos);
+          legRef.current += 0.35; // Scampering leg movement
+          
+          if (progress < 1) {
+            animationRef.current = requestAnimationFrame(animate);
+          } else {
+            setIsRunning(false);
+            setHasRun(true);
+          }
+        };
+        
+        animationRef.current = requestAnimationFrame(animate);
+      }
+    };
+    
+    window.addEventListener('scroll', checkPosition);
+    checkPosition(); // Initial check
     
     return () => {
+      window.removeEventListener('scroll', checkPosition);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [scrollProgress, hasRun, isRunning]);
+  }, [projectsEndRef, servicesStartRef, hasRun, isRunning]);
   
-  // Reset when user scrolls back up
+  // Reset when user scrolls back up significantly
   useEffect(() => {
-    if (scrollProgress < 0.15 && hasRun) {
-      setHasRun(false);
-    }
-  }, [scrollProgress, hasRun]);
+    const handleReset = () => {
+      if (!projectsEndRef.current || !hasRun) return;
+      const projectsRect = projectsEndRef.current.getBoundingClientRect();
+      // Reset when projects section comes back into upper view
+      if (projectsRect.top > window.innerHeight * 0.5) {
+        setHasRun(false);
+      }
+    };
+    
+    window.addEventListener('scroll', handleReset);
+    return () => window.removeEventListener('scroll', handleReset);
+  }, [projectsEndRef, hasRun]);
   
   if (!isRunning) return null;
   
@@ -1491,6 +1515,8 @@ function Index() {
   const [wireframeMode, setWireframeMode] = useState(false);
   const [matrixMode, setMatrixMode] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const projectsEndRef = useRef<HTMLDivElement>(null);
+  const servicesStartRef = useRef<HTMLDivElement>(null);
 
   // Konami code easter egg
   useKonamiCode(() => setMatrixMode(true));
@@ -1547,7 +1573,7 @@ function Index() {
       {!started && <LoadingScreen onStart={handleStart} />}
       <StatusBeacon />
       <MatrixRain active={matrixMode} />
-      <WireframeRat scrollProgress={scrollProgress} />
+      <WireframeRat projectsEndRef={projectsEndRef} servicesStartRef={servicesStartRef} />
 
       {/* Fixed 3D Canvas */}
       <div className="fixed inset-0 z-0">
@@ -1634,6 +1660,9 @@ function Index() {
               ))}
             </div>
           </div>
+          
+          {/* Ref marker for rat trigger - end of projects section */}
+          <div ref={projectsEndRef} className="absolute bottom-0 left-0 right-0 h-1" />
         </section>
 
         {/* Process Viewer Section */}
@@ -1641,6 +1670,9 @@ function Index() {
           <ProcessViewer />
         </section>
 
+        {/* Services Section ref marker for rat trigger */}
+        <div ref={servicesStartRef} className="h-1" />
+        
         {/* Services Section */}
         <ServicesSection />
 

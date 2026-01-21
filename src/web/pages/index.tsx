@@ -1306,8 +1306,8 @@ function Footer() {
             <span 
               className="font-mono text-xs tracking-widest"
               style={{ 
-                color: '#8B4513',
-                textShadow: '0 0 8px #00d9ff'
+                color: '#00d9ff',
+                textShadow: '0 0 8px #00d9ff, 0 0 16px #00d9ff'
               }}
             >
               ELVTE

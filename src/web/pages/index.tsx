@@ -241,6 +241,7 @@ function ProjectModal({ project, onClose, wireframeMode, onToggleWireframe }: {
           <h3 className="font-mono text-[#ff41b4] text-xl">{project.title}</h3>
           <button
             onClick={onClose}
+            aria-label="Close project modal"
             className="w-8 h-8 flex items-center justify-center text-[#ff41b4] hover:bg-[#ff41b4]/20 rounded transition-colors"
           >
             ✕
@@ -836,14 +837,8 @@ function WireframeRat({ mitSectionEndRef }: { mitSectionEndRef: React.RefObject<
   const [isRunning, setIsRunning] = useState(false);
   const [hasTriggered, setHasTriggered] = useState(false);
   const [position, setPosition] = useState(-50);
-  const [inTriggerZone, setInTriggerZone] = useState(false);
   const legRef = useRef(0);
   const animationRef = useRef<number | null>(null);
-  
-  // Debug log on mount
-  useEffect(() => {
-    console.log('[RAT] 🐀 Component mounted, waiting for MIT section trigger');
-  }, []);
   
   // Use getBoundingClientRect to detect when MIT section has scrolled past
   useEffect(() => {
@@ -851,14 +846,12 @@ function WireframeRat({ mitSectionEndRef }: { mitSectionEndRef: React.RefObject<
       if (!mitSectionEndRef.current || hasTriggered || isRunning) return;
       
       const rect = mitSectionEndRef.current.getBoundingClientRect();
-      const triggerPoint = rect.top + (rect.height * 0.5); // Mid-point of MIT section
+      const triggerPoint = rect.top + (rect.height * 0.5);
       
       // Check if the MIT section center has scrolled past 200px from top of viewport
       const isInZone = triggerPoint < 200 && triggerPoint > -rect.height;
-      setInTriggerZone(isInZone);
       
       if (isInZone && !hasTriggered && !isRunning) {
-        console.log('[RAT] 🐀 TRIGGER ZONE HIT - MIT section scrolled past - STARTING RUN!');
         setHasTriggered(true);
         setIsRunning(true);
         setPosition(-50);
@@ -883,7 +876,6 @@ function WireframeRat({ mitSectionEndRef }: { mitSectionEndRef: React.RefObject<
             animationRef.current = requestAnimationFrame(animate);
           } else {
             setIsRunning(false);
-            console.log('[RAT] 🐀 RUN COMPLETE');
           }
         };
         
@@ -905,7 +897,6 @@ function WireframeRat({ mitSectionEndRef }: { mitSectionEndRef: React.RefObject<
     const handleScroll = () => {
       const scrollPercent = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
       if (scrollPercent < 20 && hasTriggered && !isRunning) {
-        console.log('[RAT] 🐀 Reset - scrolled back to top');
         setHasTriggered(false);
       }
     };
@@ -919,24 +910,7 @@ function WireframeRat({ mitSectionEndRef }: { mitSectionEndRef: React.RefObject<
   
   return (
     <>
-      {/* Debug indicator - pink dot in corner shows when in trigger zone */}
-      <div 
-        className="fixed bottom-4 left-4 z-[999999] flex items-center gap-2 font-mono text-xs"
-        style={{ pointerEvents: 'none' }}
-      >
-        <div 
-          className="w-3 h-3 rounded-full transition-all duration-300"
-          style={{ 
-            backgroundColor: inTriggerZone ? '#ff41b4' : 'rgba(255,65,180,0.3)',
-            boxShadow: inTriggerZone ? '0 0 10px #ff41b4' : 'none'
-          }} 
-        />
-        <span className="text-[#ff41b4]/50" style={{ fontSize: '10px' }}>
-          {hasTriggered ? '🐀 triggered' : inTriggerZone ? '🐀 in zone' : '🐀 waiting'}
-        </span>
-      </div>
-      
-      {/* The rat - always render but positioned off-screen when not running */}
+      {/* The rat - only render when running */}
       {isRunning && (
         <div 
           className="fixed pointer-events-none"
@@ -1471,6 +1445,7 @@ function Footer() {
             href="https://discord.com/users/pheliabobelia"
             target="_blank"
             rel="noopener noreferrer"
+            aria-label="Discord"
             className="w-10 h-10 flex items-center justify-center rounded-lg border border-[#ff41b4]/30 
                        text-[#ff41b4] hover:bg-[#ff41b4]/10 hover:border-[#ff41b4]/60 transition-all"
           >
@@ -1480,6 +1455,7 @@ function Footer() {
             href="https://artstation.com"
             target="_blank"
             rel="noopener noreferrer"
+            aria-label="ArtStation"
             className="w-10 h-10 flex items-center justify-center rounded-lg border border-[#ff41b4]/30 
                        text-[#ff41b4] hover:bg-[#ff41b4]/10 hover:border-[#ff41b4]/60 transition-all"
           >
@@ -1489,6 +1465,7 @@ function Footer() {
             href="https://linkedin.com"
             target="_blank"
             rel="noopener noreferrer"
+            aria-label="LinkedIn"
             className="w-10 h-10 flex items-center justify-center rounded-lg border border-[#ff41b4]/30 
                        text-[#ff41b4] hover:bg-[#ff41b4]/10 hover:border-[#ff41b4]/60 transition-all"
           >

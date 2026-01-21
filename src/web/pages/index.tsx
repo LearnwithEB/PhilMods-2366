@@ -1289,12 +1289,28 @@ function Footer() {
         <div className="text-center mb-8">
           <p className="font-mono text-[#ff41b4] text-lg mb-2">PHILMODS</p>
           <p className="font-mono text-white/50 text-sm">
-            © 2025 | Bringing Ideas to Life Through Innovation
+            © 2026 PHILMODS | Bringing Ideas to Life Through Innovation
           </p>
+          <p className="font-mono text-white/30 text-xs mt-2">
+            itdosentmatter
+          </p>
+          {/* Vulcan Salute - Live Long and Prosper */}
+          <div className="flex justify-center items-center gap-2 mt-4">
+            <span 
+              className="text-2xl"
+              style={{ 
+                color: '#00d9ff',
+                textShadow: '0 0 10px #00d9ff, 0 0 20px #00d9ff, 0 0 30px #00d9ff',
+                filter: 'drop-shadow(0 0 8px #00d9ff)'
+              }}
+            >
+              🖖
+            </span>
+          </div>
         </div>
 
         {/* Social icons */}
-        <div className="flex justify-center gap-6 mb-8">
+        <div className="flex justify-center gap-6">
           <a 
             href="https://discord.com/users/pheliabobelia"
             target="_blank"
@@ -1322,13 +1338,6 @@ function Footer() {
           >
             <LinkedInIcon />
           </a>
-        </div>
-
-        {/* Legal links */}
-        <div className="flex justify-center gap-6 text-xs font-mono text-white/30">
-          <a href="#" className="hover:text-[#ff41b4] transition-colors">Privacy Policy</a>
-          <span>|</span>
-          <a href="#" className="hover:text-[#ff41b4] transition-colors">Terms of Service</a>
         </div>
       </div>
     </footer>

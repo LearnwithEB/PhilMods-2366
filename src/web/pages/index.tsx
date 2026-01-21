@@ -1297,8 +1297,8 @@ function Footer() {
               className="text-2xl"
               style={{ 
                 color: '#8B4513',
-                textShadow: '0 0 10px #8B4513, 0 0 20px #a0522d, 0 0 30px #cd853f',
-                filter: 'drop-shadow(0 0 8px #8B4513)'
+                textShadow: '0 0 10px #00d9ff, 0 0 20px #00d9ff, 0 0 30px #00d9ff',
+                filter: 'drop-shadow(0 0 12px #00d9ff)'
               }}
             >
               🖖
@@ -1307,7 +1307,7 @@ function Footer() {
               className="font-mono text-xs tracking-widest"
               style={{ 
                 color: '#8B4513',
-                textShadow: '0 0 8px #8B4513'
+                textShadow: '0 0 8px #00d9ff'
               }}
             >
               ELVTE

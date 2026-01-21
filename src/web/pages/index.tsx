@@ -730,56 +730,7 @@ function ProcessViewer() {
   );
 }
 
-// Real-time Stats Dashboard
-function StatsDashboard() {
-  const [projectsCount, setProjectsCount] = useState(0);
-  const [verticesCount, setVerticesCount] = useState(0);
-  
-  useEffect(() => {
-    // Animate counters on mount
-    const targetProjects = 47;
-    const targetVertices = 2.4;
-    
-    let frame = 0;
-    const duration = 60; // frames
-    
-    const animate = () => {
-      frame++;
-      const progress = Math.min(frame / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3); // ease out cubic
-      
-      setProjectsCount(Math.floor(targetProjects * eased));
-      setVerticesCount(parseFloat((targetVertices * eased).toFixed(1)));
-      
-      if (frame < duration) {
-        requestAnimationFrame(animate);
-      }
-    };
-    
-    const timer = setTimeout(() => {
-      requestAnimationFrame(animate);
-    }, 500);
-    
-    return () => clearTimeout(timer);
-  }, []);
-  
-  return (
-    <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto">
-      <div className="p-4 border border-[#ff41b4]/30 rounded-lg bg-[#0d0618]/60 text-center">
-        <div className="font-mono text-3xl text-[#ff41b4] mb-1">{projectsCount}</div>
-        <div className="font-mono text-xs text-white/50">Projects Completed</div>
-      </div>
-      <div className="p-4 border border-[#ff41b4]/30 rounded-lg bg-[#0d0618]/60 text-center">
-        <div className="font-mono text-3xl text-[#ff41b4] mb-1">{verticesCount}M</div>
-        <div className="font-mono text-xs text-white/50">Total Vertices</div>
-      </div>
-      <div className="p-4 border border-[#ff41b4]/30 rounded-lg bg-[#0d0618]/60 text-center">
-        <div className="font-mono text-3xl text-[#ff41b4] mb-1">∞</div>
-        <div className="font-mono text-xs text-white/50">Coffee Consumed</div>
-      </div>
-    </div>
-  );
-}
+
 
 // Matrix Rain Effect (Easter Egg)
 function MatrixRain({ active }: { active: boolean }) {
@@ -830,6 +781,159 @@ function MatrixRain({ active }: { active: boolean }) {
       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
         <div className="font-mono text-[#ff41b4] text-4xl mb-4 animate-pulse">MATRIX MODE</div>
         <div className="font-mono text-[#ff41b4]/60 text-sm">Press ESC to exit</div>
+      </div>
+    </div>
+  );
+}
+
+// Wireframe Rat Component - Runs across screen at 50% scroll
+function WireframeRat({ scrollProgress }: { scrollProgress: number }) {
+  const [hasRun, setHasRun] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
+  const [position, setPosition] = useState(-100);
+  const legRef = useRef(0);
+  const animationRef = useRef<number | null>(null);
+  
+  useEffect(() => {
+    // Trigger rat run at ~50% scroll progress
+    if (scrollProgress >= 0.45 && scrollProgress <= 0.55 && !hasRun && !isRunning) {
+      setIsRunning(true);
+      setPosition(-100);
+      
+      const startTime = Date.now();
+      const duration = 4000; // 4 seconds to cross screen
+      
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Eased movement
+        const eased = progress < 0.5 
+          ? 2 * progress * progress 
+          : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+        
+        const newPos = -100 + (eased * 220); // -100 to 120vw
+        setPosition(newPos);
+        legRef.current += 0.4;
+        
+        if (progress < 1) {
+          animationRef.current = requestAnimationFrame(animate);
+        } else {
+          setIsRunning(false);
+          setHasRun(true);
+        }
+      };
+      
+      animationRef.current = requestAnimationFrame(animate);
+    }
+    
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [scrollProgress, hasRun, isRunning]);
+  
+  // Reset when user scrolls back up
+  useEffect(() => {
+    if (scrollProgress < 0.3 && hasRun) {
+      setHasRun(false);
+    }
+  }, [scrollProgress, hasRun]);
+  
+  if (!isRunning) return null;
+  
+  const legAngle = Math.sin(legRef.current) * 30;
+  const bodyBob = Math.sin(legRef.current * 2) * 3;
+  
+  return (
+    <div 
+      className="fixed z-50 pointer-events-none"
+      style={{ 
+        left: `${position}vw`, 
+        top: '50vh',
+        transform: `translateY(${bodyBob}px)`
+      }}
+    >
+      <svg 
+        width="80" 
+        height="50" 
+        viewBox="0 0 80 50"
+        className="transform scale-x-1"
+        style={{ filter: 'drop-shadow(0 0 10px #ff41b4)' }}
+      >
+        {/* Body */}
+        <ellipse 
+          cx="35" cy="25" rx="20" ry="12" 
+          fill="none" 
+          stroke="#ff41b4" 
+          strokeWidth="2"
+        />
+        {/* Head */}
+        <circle 
+          cx="58" cy="22" r="10" 
+          fill="none" 
+          stroke="#ff41b4" 
+          strokeWidth="2"
+        />
+        {/* Ear */}
+        <circle 
+          cx="64" cy="14" r="5" 
+          fill="none" 
+          stroke="#ff41b4" 
+          strokeWidth="1.5"
+        />
+        {/* Eye */}
+        <circle cx="62" cy="20" r="2" fill="#ff41b4" />
+        {/* Nose */}
+        <circle cx="68" cy="24" r="1.5" fill="#ff41b4" />
+        {/* Whiskers */}
+        <line x1="67" y1="24" x2="78" y2="20" stroke="#ff41b4" strokeWidth="1" />
+        <line x1="67" y1="24" x2="78" y2="24" stroke="#ff41b4" strokeWidth="1" />
+        <line x1="67" y1="24" x2="78" y2="28" stroke="#ff41b4" strokeWidth="1" />
+        {/* Tail */}
+        <path 
+          d="M 15 25 Q 5 15, 2 30 Q 0 40, 8 35" 
+          fill="none" 
+          stroke="#ff41b4" 
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+        {/* Front leg */}
+        <line 
+          x1="45" y1="35" x2={45 + Math.sin(legAngle * Math.PI / 180) * 8} y2="48"
+          stroke="#ff41b4" 
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+        {/* Back leg */}
+        <line 
+          x1="25" y1="35" x2={25 + Math.sin(-legAngle * Math.PI / 180) * 10} y2="48"
+          stroke="#ff41b4" 
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+        {/* Second front leg */}
+        <line 
+          x1="50" y1="35" x2={50 + Math.sin(-legAngle * Math.PI / 180) * 8} y2="48"
+          stroke="#ff41b4" 
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+        {/* Second back leg */}
+        <line 
+          x1="30" y1="35" x2={30 + Math.sin(legAngle * Math.PI / 180) * 10} y2="48"
+          stroke="#ff41b4" 
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      </svg>
+      {/* Squeak text bubble */}
+      <div 
+        className="absolute -top-8 left-10 font-mono text-[#ff41b4] text-xs opacity-80"
+        style={{ animation: 'pulse 0.5s infinite' }}
+      >
+        *squeak!*
       </div>
     </div>
   );
@@ -1399,6 +1503,7 @@ function Index() {
       {!started && <LoadingScreen onStart={handleStart} />}
       <StatusBeacon />
       <MatrixRain active={matrixMode} />
+      <WireframeRat scrollProgress={scrollProgress} />
 
       {/* Fixed 3D Canvas */}
       <div className="fixed inset-0 z-0">
@@ -1485,17 +1590,6 @@ function Index() {
               ))}
             </div>
           </div>
-        </section>
-
-        {/* Stats Dashboard */}
-        <section className="py-20 px-4 bg-gradient-to-b from-transparent to-[#0d0618]/50">
-          <h2 className="text-center font-mono text-[#ff41b4] text-2xl md:text-3xl mb-4">
-            [ REAL-TIME STATS ]
-          </h2>
-          <p className="text-center font-mono text-white/40 text-sm mb-12">
-            Live performance metrics
-          </p>
-          <StatsDashboard />
         </section>
 
         {/* Process Viewer Section */}

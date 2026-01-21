@@ -1006,81 +1006,6 @@ function WireframeRat({ mitSectionEndRef }: { mitSectionEndRef: React.RefObject<
   );
 }
 
-// Small fallback rat that sits in MIT Achievement section corner with gentle bounce
-function CornerRat() {
-  const [bounce, setBounce] = useState(0);
-  
-  useEffect(() => {
-    let frame = 0;
-    const animate = () => {
-      frame += 0.08;
-      setBounce(Math.sin(frame) * 4);
-      requestAnimationFrame(animate);
-    };
-    const id = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(id);
-  }, []);
-  
-  return (
-    <div 
-      className="absolute top-4 right-4 pointer-events-none"
-      style={{ 
-        transform: `translateY(${bounce}px)`,
-        zIndex: 50
-      }}
-    >
-      <svg 
-        width="60" 
-        height="40" 
-        viewBox="0 0 80 50"
-        style={{ 
-          filter: 'drop-shadow(0 0 10px #ff41b4) drop-shadow(0 0 20px #ff41b4)'
-        }}
-      >
-        {/* Body */}
-        <ellipse 
-          cx="35" cy="25" rx="18" ry="10" 
-          fill="rgba(255,65,180,0.15)" 
-          stroke="#ff41b4" 
-          strokeWidth="2"
-        />
-        {/* Head */}
-        <circle 
-          cx="55" cy="23" r="8" 
-          fill="rgba(255,65,180,0.15)" 
-          stroke="#ff41b4" 
-          strokeWidth="2"
-        />
-        {/* Ear */}
-        <circle 
-          cx="60" cy="16" r="4" 
-          fill="rgba(255,65,180,0.15)" 
-          stroke="#ff41b4" 
-          strokeWidth="1.5"
-        />
-        {/* Eye */}
-        <circle cx="58" cy="21" r="2" fill="#ff41b4" />
-        {/* Nose */}
-        <circle cx="63" cy="24" r="1.5" fill="#ff41b4" />
-        {/* Tail */}
-        <path 
-          d="M 17 25 Q 8 18, 5 28 Q 3 38, 10 32"
-          fill="none" 
-          stroke="#ff41b4" 
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-        {/* Whiskers */}
-        <line x1="62" y1="24" x2="72" y2="20" stroke="#ff41b4" strokeWidth="1" />
-        <line x1="62" y1="24" x2="72" y2="26" stroke="#ff41b4" strokeWidth="1" />
-        {/* Front legs */}
-        <line x1="42" y1="33" x2="44" y2="42" stroke="#ff41b4" strokeWidth="1.5" strokeLinecap="round" />
-        <line x1="28" y1="33" x2="26" y2="42" stroke="#ff41b4" strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
-    </div>
-  );
-}
-
 // Konami Code Hook
 function useKonamiCode(callback: () => void) {
   const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
@@ -1534,7 +1459,7 @@ const SERVICES = [
 ];
 
 // Services Section
-function ServicesSection({ mitSectionEndRef }: { mitSectionEndRef?: React.RefObject<HTMLDivElement | null> }) {
+function ServicesSection() {
   return (
     <section className="py-20 px-4 relative overflow-hidden">
       {/* Background pattern */}
@@ -1644,9 +1569,6 @@ function ServicesSection({ mitSectionEndRef }: { mitSectionEndRef?: React.RefObj
                 {/* Shimmer overlay effect */}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent 
                                -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
-                
-                {/* Small corner rat - always visible fallback */}
-                <CornerRat />
               </div>
               
               {/* Corner accents */}
@@ -1703,9 +1625,6 @@ function ServicesSection({ mitSectionEndRef }: { mitSectionEndRef?: React.RefObj
             </div>
           </div>
         </div>
-        
-        {/* Ref marker for rat trigger - end of MIT/Mya section */}
-        {mitSectionEndRef && <div ref={mitSectionEndRef} className="h-1" />}
       </div>
     </section>
   );
@@ -1952,12 +1871,15 @@ function Index() {
         </section>
 
         {/* Services Section */}
-        <ServicesSection mitSectionEndRef={mitSectionEndRef} />
+        <ServicesSection />
 
         {/* About Console Section */}
         <section className="min-h-screen flex items-center justify-center p-8 bg-gradient-to-t from-[#0d0618] to-transparent">
           <TerminalConsole nostalgiaMode={nostalgiaMode} onToggle={() => setNostalgiaMode(!nostalgiaMode)} />
         </section>
+
+        {/* Rat trigger zone - after About Console, before Contact */}
+        <div ref={mitSectionEndRef} className="h-16" />
 
         {/* Contact Section - Open Network */}
         <ContactSection contactSectionStartRef={contactSectionStartRef} />

@@ -1477,7 +1477,7 @@ function ServicesSection() {
           Transforming Imagination into Immersive 3D Realities
         </p>
         <p className="text-center font-mono text-white/40 text-sm mb-16 max-w-xl mx-auto">
-          At PhilMods, my mission is to bring your ideas to life through innovative 3D creation. I specialize in high-quality models and animations that cater to your unique requirements.
+          At PhilMods, our mission is to bring your ideas to life through innovative 3D creation. We specialize in high-quality models and animations that cater to your unique requirements.
         </p>
         
         {/* Services Grid */}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, Suspense, useMemo } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Float, Stars } from "@react-three/drei";
+import { Float, Stars, useGLTF } from "@react-three/drei";
 import gsap from "gsap";
 import * as THREE from "three";
 
@@ -408,40 +408,39 @@ function FloatingCodeParticle({ x, y, z, speed, size }: {
   );
 }
 
-// Animated Wireframe Shape for 3D scene (replacing MEOW model)
-function WireframeShape({ scrollProgress }: { scrollProgress: number }) {
+// MEOW Character 3D Model
+function MeowCharacter({ scrollProgress }: { scrollProgress: number }) {
   const groupRef = useRef<THREE.Group>(null);
+  const { scene } = useGLTF('/meow.gltf');
   
-  const fillOpacity = Math.min(scrollProgress * 3, 0.8);
-
   useFrame((state) => {
     if (groupRef.current) {
+      // Scroll-based Y rotation
       groupRef.current.rotation.y = state.clock.elapsedTime * 0.3 + scrollProgress * Math.PI * 2;
-      groupRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.2) * 0.2;
+      // Subtle breathing-like movement
+      groupRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.2) * 0.1;
     }
   });
 
   return (
-    <group ref={groupRef} scale={1.5} position={[0, 0.5, 0]}>
-      {/* Main wireframe icosahedron */}
-      <mesh>
-        <icosahedronGeometry args={[1, 1]} />
-        <meshBasicMaterial color={TERMINAL_GREEN} wireframe transparent opacity={0.8} />
-      </mesh>
-      {/* Inner solid with progressive fill based on scroll */}
-      <mesh scale={0.95}>
-        <icosahedronGeometry args={[1, 1]} />
-        <meshStandardMaterial 
-          color={TERMINAL_GREEN}
-          emissive={TERMINAL_GREEN}
-          emissiveIntensity={0.3 + fillOpacity * 0.5}
-          transparent
-          opacity={fillOpacity * 0.6}
-          metalness={0.5}
-          roughness={0.3}
-        />
-      </mesh>
-    </group>
+    <Float speed={1.5} rotationIntensity={0.3} floatIntensity={0.5}>
+      <group ref={groupRef} scale={0.8} position={[0, 0, 0]}>
+        <primitive object={scene} />
+      </group>
+    </Float>
+  );
+}
+
+// Preload the MEOW model for optimization
+useGLTF.preload('/meow.gltf');
+
+// Loading fallback for 3D model
+function ModelLoadingFallback() {
+  return (
+    <mesh>
+      <icosahedronGeometry args={[0.8, 1]} />
+      <meshBasicMaterial color={TERMINAL_GREEN} wireframe transparent opacity={0.5} />
+    </mesh>
   );
 }
 
@@ -456,23 +455,27 @@ function HolographicEmitter({ scrollProgress }: { scrollProgress: number }) {
   });
 
   return (
-    <Float speed={2} rotationIntensity={0.2} floatIntensity={0.5}>
-      <group ref={groupRef} position={[0, -0.5, 0]}>
-        <mesh position={[0, -1.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[2, 2.2, 0.3, 32]} />
-          <meshStandardMaterial color="#2a1848" metalness={0.8} roughness={0.2} />
-        </mesh>
-        <mesh position={[0, -1.35, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[1.8, 0.05, 16, 100]} />
-          <meshBasicMaterial color={TERMINAL_GREEN} />
-        </mesh>
-        <WireframeShape scrollProgress={scrollProgress} />
-        <mesh position={[0, -0.5, 0]}>
-          <cylinderGeometry args={[0.3, 1.5, 2, 32, 1, true]} />
-          <meshBasicMaterial color={TERMINAL_GREEN} transparent opacity={0.1} side={THREE.DoubleSide} />
-        </mesh>
-      </group>
-    </Float>
+    <group ref={groupRef} position={[0, -0.5, 0]}>
+      {/* Platform base */}
+      <mesh position={[0, -2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[2, 2.2, 0.3, 32]} />
+        <meshStandardMaterial color="#2a1848" metalness={0.8} roughness={0.2} />
+      </mesh>
+      {/* Glowing ring */}
+      <mesh position={[0, -1.85, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[1.8, 0.05, 16, 100]} />
+        <meshBasicMaterial color={TERMINAL_GREEN} />
+      </mesh>
+      {/* MEOW Character Model */}
+      <Suspense fallback={<ModelLoadingFallback />}>
+        <MeowCharacter scrollProgress={scrollProgress} />
+      </Suspense>
+      {/* Holographic cone effect */}
+      <mesh position={[0, -1, 0]}>
+        <cylinderGeometry args={[0.3, 1.5, 2, 32, 1, true]} />
+        <meshBasicMaterial color={TERMINAL_GREEN} transparent opacity={0.1} side={THREE.DoubleSide} />
+      </mesh>
+    </group>
   );
 }
 
@@ -497,9 +500,24 @@ function Scene({ scrollProgress, started }: { scrollProgress: number; started: b
 
   return (
     <>
-      <ambientLight intensity={0.3} />
-      <pointLight position={[10, 10, 10]} intensity={1} color={TERMINAL_GREEN} />
+      {/* Enhanced lighting for MEOW model */}
+      <ambientLight intensity={0.6} />
+      <pointLight position={[10, 10, 10]} intensity={1.5} color={TERMINAL_GREEN} />
       <pointLight position={[-10, -10, -10]} intensity={0.5} color={ACCENT_PINK} />
+      {/* Spotlight from above */}
+      <spotLight 
+        position={[0, 8, 5]} 
+        intensity={2} 
+        color={TERMINAL_GREEN} 
+        angle={0.5} 
+        penumbra={0.5}
+        castShadow
+      />
+      {/* Rim light from behind */}
+      <pointLight position={[0, 2, -5]} intensity={1} color={TERMINAL_GREEN} />
+      {/* Front fill light */}
+      <pointLight position={[0, 0, 5]} intensity={0.8} color="#ffffff" />
+      
       <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
       <CodeParticles count={40} />
       <group position={[0, 0, 0]}>

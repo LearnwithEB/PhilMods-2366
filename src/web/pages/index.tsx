@@ -60,10 +60,9 @@ const PROJECTS = [
 
 // Floating badges
 const BADGES = [
-  "UNREAL ENGINE CERTIFIED",
-  "CLEAN TOPOLOGY SPECIALIST",
-  "GAME-READY ASSETS",
-  "PBR TEXTURING EXPERT"
+  "BLENDER",
+  "RIGGING",
+  "GAME READY ASSETS"
 ];
 
 // Loading state component with detailed boot sequence

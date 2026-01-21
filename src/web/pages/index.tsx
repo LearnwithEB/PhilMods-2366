@@ -831,65 +831,69 @@ function MatrixRain({ active }: { active: boolean }) {
   );
 }
 
-// Wireframe Rat Component - Uses Intersection Observer for reliable trigger
+// Wireframe Rat Component - Simplified with reliable trigger after MIT section
 function WireframeRat({ mitSectionEndRef }: { mitSectionEndRef: React.RefObject<HTMLDivElement | null>; contactSectionStartRef: React.RefObject<HTMLDivElement | null> }) {
   const [isRunning, setIsRunning] = useState(false);
   const [hasTriggered, setHasTriggered] = useState(false);
-  const [position, setPosition] = useState(-35);
-  const [direction, setDirection] = useState<'right' | 'left'>('right');
+  const [position, setPosition] = useState(-50);
+  const [inTriggerZone, setInTriggerZone] = useState(false);
   const legRef = useRef(0);
   const animationRef = useRef<number | null>(null);
   
-  // Use Intersection Observer to trigger when MIT section is 50% visible
+  // Debug log on mount
   useEffect(() => {
-    if (!mitSectionEndRef.current || hasTriggered) return;
-    
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && !hasTriggered && !isRunning) {
-            console.log('[RAT] 🐀 MIT section visible - STARTING RUN!');
-            setHasTriggered(true);
-            setIsRunning(true);
-            setDirection('right');
-            setPosition(-35);
-            
-            const startTime = Date.now();
-            const duration = 4000; // 4 seconds for snappier movement
-            
-            const animate = () => {
-              const elapsed = Date.now() - startTime;
-              const progress = Math.min(elapsed / duration, 1);
-              
-              // Smooth cubic-bezier ease-in-out for natural acceleration/deceleration
-              // Using bezier curve approximation: cubic-bezier(0.4, 0, 0.2, 1)
-              const eased = progress < 0.5 
-                ? 4 * progress * progress * progress 
-                : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-              
-              const newPos = -35 + (eased * 170); // -35vw to 135vw
-              setPosition(newPos);
-              legRef.current += 0.45; // Faster leg frequency to match 4s duration
-              
-              if (progress < 1) {
-                animationRef.current = requestAnimationFrame(animate);
-              } else {
-                setIsRunning(false);
-                console.log('[RAT] 🐀 RUN COMPLETE');
-              }
-            };
-            
+    console.log('[RAT] 🐀 Component mounted, waiting for MIT section trigger');
+  }, []);
+  
+  // Use getBoundingClientRect to detect when MIT section has scrolled past
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!mitSectionEndRef.current || hasTriggered || isRunning) return;
+      
+      const rect = mitSectionEndRef.current.getBoundingClientRect();
+      const triggerPoint = rect.top + (rect.height * 0.5); // Mid-point of MIT section
+      
+      // Check if the MIT section center has scrolled past 200px from top of viewport
+      const isInZone = triggerPoint < 200 && triggerPoint > -rect.height;
+      setInTriggerZone(isInZone);
+      
+      if (isInZone && !hasTriggered && !isRunning) {
+        console.log('[RAT] 🐀 TRIGGER ZONE HIT - MIT section scrolled past - STARTING RUN!');
+        setHasTriggered(true);
+        setIsRunning(true);
+        setPosition(-50);
+        
+        const startTime = Date.now();
+        const duration = 5000; // 5 seconds for easy visibility
+        
+        const animate = () => {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          
+          // Smooth ease-in-out
+          const eased = progress < 0.5 
+            ? 4 * progress * progress * progress 
+            : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+          
+          const newPos = -50 + (eased * 200); // -50vw to 150vw
+          setPosition(newPos);
+          legRef.current += 0.35;
+          
+          if (progress < 1) {
             animationRef.current = requestAnimationFrame(animate);
+          } else {
+            setIsRunning(false);
+            console.log('[RAT] 🐀 RUN COMPLETE');
           }
-        });
-      },
-      { threshold: 0.5 } // Trigger when 50% visible
-    );
+        };
+        
+        animationRef.current = requestAnimationFrame(animate);
+      }
+    };
     
-    observer.observe(mitSectionEndRef.current);
-    
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
-      observer.disconnect();
+      window.removeEventListener('scroll', handleScroll);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
@@ -900,155 +904,176 @@ function WireframeRat({ mitSectionEndRef }: { mitSectionEndRef: React.RefObject<
   useEffect(() => {
     const handleScroll = () => {
       const scrollPercent = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
-      if (scrollPercent < 30 && hasTriggered && !isRunning) {
+      if (scrollPercent < 20 && hasTriggered && !isRunning) {
+        console.log('[RAT] 🐀 Reset - scrolled back to top');
         setHasTriggered(false);
       }
     };
     
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [hasTriggered, isRunning]);
   
-  if (!isRunning) return null;
-  
   const legAngle = Math.sin(legRef.current) * 35;
-  const bodyBob = Math.sin(legRef.current * 2) * 10;
+  const bodyBob = Math.sin(legRef.current * 2) * 15;
   
   return (
-    <div 
-      className="fixed pointer-events-none"
-      style={{ 
-        left: `${position}vw`, 
-        top: '50vh',
-        transform: `translateY(${bodyBob}px) scaleX(${direction === 'left' ? -1 : 1})`,
-        zIndex: 99999
-      }}
-    >
-      {/* Large glow backdrop */}
+    <>
+      {/* Debug indicator - pink dot in corner shows when in trigger zone */}
       <div 
-        className="absolute rounded-full"
-        style={{
-          width: '500px',
-          height: '400px',
-          background: 'radial-gradient(ellipse at center, rgba(255,65,180,0.6) 0%, rgba(255,65,180,0.3) 40%, transparent 70%)',
-          transform: 'translate(-150px, -150px)',
-          filter: 'blur(40px)'
-        }}
-      />
-      <svg 
-        width="300" 
-        height="200" 
-        viewBox="0 0 80 50"
-        style={{ 
-          filter: 'drop-shadow(0 0 40px #ff41b4) drop-shadow(0 0 80px #ff41b4) drop-shadow(0 0 20px #ff41b4)'
-        }}
+        className="fixed bottom-4 left-4 z-[999999] flex items-center gap-2 font-mono text-xs"
+        style={{ pointerEvents: 'none' }}
       >
-        {/* Body */}
-        <ellipse 
-          cx="35" cy="25" rx="20" ry="12" 
-          fill="rgba(255,65,180,0.2)" 
-          stroke="#ff41b4" 
-          strokeWidth="2.5"
+        <div 
+          className="w-3 h-3 rounded-full transition-all duration-300"
+          style={{ 
+            backgroundColor: inTriggerZone ? '#ff41b4' : 'rgba(255,65,180,0.3)',
+            boxShadow: inTriggerZone ? '0 0 10px #ff41b4' : 'none'
+          }} 
         />
-        {/* Head */}
-        <circle 
-          cx="58" cy="22" r="10" 
-          fill="rgba(255,65,180,0.2)" 
-          stroke="#ff41b4" 
-          strokeWidth="2.5"
-        />
-        {/* Ear */}
-        <circle 
-          cx="64" cy="14" r="5" 
-          fill="rgba(255,65,180,0.2)" 
-          stroke="#ff41b4" 
-          strokeWidth="2"
-        />
-        {/* Second ear */}
-        <circle 
-          cx="56" cy="12" r="4" 
-          fill="rgba(255,65,180,0.2)" 
-          stroke="#ff41b4" 
-          strokeWidth="2"
-        />
-        {/* Eye */}
-        <circle cx="62" cy="20" r="2.5" fill="#ff41b4" />
-        {/* Eye shine */}
-        <circle cx="63" cy="19" r="1" fill="#fff" />
-        {/* Nose */}
-        <circle cx="68" cy="24" r="2" fill="#ff41b4" />
-        {/* Whiskers */}
-        <line x1="67" y1="24" x2="80" y2="18" stroke="#ff41b4" strokeWidth="1.5" />
-        <line x1="67" y1="24" x2="80" y2="24" stroke="#ff41b4" strokeWidth="1.5" />
-        <line x1="67" y1="24" x2="80" y2="30" stroke="#ff41b4" strokeWidth="1.5" />
-        {/* Tail - wavy */}
-        <path 
-          d={`M 15 25 Q ${5 + Math.sin(legRef.current * 0.5) * 3} 15, 2 ${30 + Math.sin(legRef.current) * 5} Q ${-2 + Math.sin(legRef.current * 0.7) * 2} 42, 8 35`}
-          fill="none" 
-          stroke="#ff41b4" 
-          strokeWidth="2.5"
-          strokeLinecap="round"
-        />
-        {/* Front leg */}
-        <line 
-          x1="45" y1="35" x2={45 + Math.sin(legAngle * Math.PI / 180) * 10} y2="50"
-          stroke="#ff41b4" 
-          strokeWidth="2.5"
-          strokeLinecap="round"
-        />
-        {/* Back leg */}
-        <line 
-          x1="25" y1="35" x2={25 + Math.sin(-legAngle * Math.PI / 180) * 12} y2="50"
-          stroke="#ff41b4" 
-          strokeWidth="2.5"
-          strokeLinecap="round"
-        />
-        {/* Second front leg */}
-        <line 
-          x1="50" y1="35" x2={50 + Math.sin(-legAngle * Math.PI / 180) * 10} y2="50"
-          stroke="#ff41b4" 
-          strokeWidth="2.5"
-          strokeLinecap="round"
-        />
-        {/* Second back leg */}
-        <line 
-          x1="30" y1="35" x2={30 + Math.sin(legAngle * Math.PI / 180) * 12} y2="50"
-          stroke="#ff41b4" 
-          strokeWidth="2.5"
-          strokeLinecap="round"
-        />
-        {/* Little feet */}
-        <circle cx={45 + Math.sin(legAngle * Math.PI / 180) * 10} cy="49" r="2" fill="#ff41b4" />
-        <circle cx={25 + Math.sin(-legAngle * Math.PI / 180) * 12} cy="49" r="2" fill="#ff41b4" />
-        <circle cx={50 + Math.sin(-legAngle * Math.PI / 180) * 10} cy="49" r="2" fill="#ff41b4" />
-        <circle cx={30 + Math.sin(legAngle * Math.PI / 180) * 12} cy="49" r="2" fill="#ff41b4" />
-      </svg>
-      {/* Squeak text bubble */}
-      <div 
-        className="absolute -top-16 left-20 font-mono text-[#ff41b4] text-2xl font-bold whitespace-nowrap"
-        style={{ 
-          animation: 'pulse 0.4s infinite',
-          textShadow: '0 0 30px #ff41b4, 0 0 60px #ff41b4, 0 0 90px #ff41b4'
-        }}
-      >
-        *squeak squeak!*
+        <span className="text-[#ff41b4]/50" style={{ fontSize: '10px' }}>
+          {hasTriggered ? '🐀 triggered' : inTriggerZone ? '🐀 in zone' : '🐀 waiting'}
+        </span>
       </div>
-      {/* Trail particles */}
-      <div className="absolute -left-12 top-1/2 flex gap-3">
-        {[0, 1, 2, 3, 4].map(i => (
+      
+      {/* The rat - always render but positioned off-screen when not running */}
+      {isRunning && (
+        <div 
+          className="fixed pointer-events-none"
+          style={{ 
+            left: `${position}vw`, 
+            top: '50vh',
+            transform: `translateY(-50%) translateY(${bodyBob}px)`,
+            zIndex: 999999
+          }}
+        >
+          {/* Massive glow backdrop */}
           <div 
-            key={i}
-            className="w-4 h-4 rounded-full bg-[#ff41b4]"
+            className="absolute rounded-full"
             style={{
-              opacity: 0.9 - i * 0.15,
-              transform: `scale(${1 - i * 0.15})`,
-              animation: `pulse ${0.3 + i * 0.1}s infinite`,
-              boxShadow: '0 0 15px #ff41b4'
+              width: '600px',
+              height: '500px',
+              background: 'radial-gradient(ellipse at center, rgba(255,65,180,0.7) 0%, rgba(255,65,180,0.4) 30%, transparent 70%)',
+              transform: 'translate(-200px, -200px)',
+              filter: 'blur(50px)'
             }}
           />
-        ))}
-      </div>
-    </div>
+          <svg 
+            width="400" 
+            height="280" 
+            viewBox="0 0 80 50"
+            style={{ 
+              filter: 'drop-shadow(0 0 50px #ff41b4) drop-shadow(0 0 100px #ff41b4) drop-shadow(0 0 30px #ff41b4)'
+            }}
+          >
+            {/* Body */}
+            <ellipse 
+              cx="35" cy="25" rx="20" ry="12" 
+              fill="rgba(255,65,180,0.3)" 
+              stroke="#ff41b4" 
+              strokeWidth="3"
+            />
+            {/* Head */}
+            <circle 
+              cx="58" cy="22" r="10" 
+              fill="rgba(255,65,180,0.3)" 
+              stroke="#ff41b4" 
+              strokeWidth="3"
+            />
+            {/* Ear */}
+            <circle 
+              cx="64" cy="14" r="5" 
+              fill="rgba(255,65,180,0.3)" 
+              stroke="#ff41b4" 
+              strokeWidth="2.5"
+            />
+            {/* Second ear */}
+            <circle 
+              cx="56" cy="12" r="4" 
+              fill="rgba(255,65,180,0.3)" 
+              stroke="#ff41b4" 
+              strokeWidth="2.5"
+            />
+            {/* Eye */}
+            <circle cx="62" cy="20" r="3" fill="#ff41b4" />
+            {/* Eye shine */}
+            <circle cx="63" cy="19" r="1.5" fill="#fff" />
+            {/* Nose */}
+            <circle cx="68" cy="24" r="2.5" fill="#ff41b4" />
+            {/* Whiskers */}
+            <line x1="67" y1="24" x2="80" y2="18" stroke="#ff41b4" strokeWidth="2" />
+            <line x1="67" y1="24" x2="80" y2="24" stroke="#ff41b4" strokeWidth="2" />
+            <line x1="67" y1="24" x2="80" y2="30" stroke="#ff41b4" strokeWidth="2" />
+            {/* Tail - wavy */}
+            <path 
+              d={`M 15 25 Q ${5 + Math.sin(legRef.current * 0.5) * 3} 15, 2 ${30 + Math.sin(legRef.current) * 5} Q ${-2 + Math.sin(legRef.current * 0.7) * 2} 42, 8 35`}
+              fill="none" 
+              stroke="#ff41b4" 
+              strokeWidth="3"
+              strokeLinecap="round"
+            />
+            {/* Front leg */}
+            <line 
+              x1="45" y1="35" x2={45 + Math.sin(legAngle * Math.PI / 180) * 10} y2="50"
+              stroke="#ff41b4" 
+              strokeWidth="3"
+              strokeLinecap="round"
+            />
+            {/* Back leg */}
+            <line 
+              x1="25" y1="35" x2={25 + Math.sin(-legAngle * Math.PI / 180) * 12} y2="50"
+              stroke="#ff41b4" 
+              strokeWidth="3"
+              strokeLinecap="round"
+            />
+            {/* Second front leg */}
+            <line 
+              x1="50" y1="35" x2={50 + Math.sin(-legAngle * Math.PI / 180) * 10} y2="50"
+              stroke="#ff41b4" 
+              strokeWidth="3"
+              strokeLinecap="round"
+            />
+            {/* Second back leg */}
+            <line 
+              x1="30" y1="35" x2={30 + Math.sin(legAngle * Math.PI / 180) * 12} y2="50"
+              stroke="#ff41b4" 
+              strokeWidth="3"
+              strokeLinecap="round"
+            />
+            {/* Little feet */}
+            <circle cx={45 + Math.sin(legAngle * Math.PI / 180) * 10} cy="49" r="2.5" fill="#ff41b4" />
+            <circle cx={25 + Math.sin(-legAngle * Math.PI / 180) * 12} cy="49" r="2.5" fill="#ff41b4" />
+            <circle cx={50 + Math.sin(-legAngle * Math.PI / 180) * 10} cy="49" r="2.5" fill="#ff41b4" />
+            <circle cx={30 + Math.sin(legAngle * Math.PI / 180) * 12} cy="49" r="2.5" fill="#ff41b4" />
+          </svg>
+          {/* Squeak text bubble */}
+          <div 
+            className="absolute -top-20 left-24 font-mono text-[#ff41b4] text-3xl font-bold whitespace-nowrap"
+            style={{ 
+              animation: 'pulse 0.4s infinite',
+              textShadow: '0 0 40px #ff41b4, 0 0 80px #ff41b4, 0 0 120px #ff41b4'
+            }}
+          >
+            *squeak squeak!*
+          </div>
+          {/* Trail particles */}
+          <div className="absolute -left-16 top-1/2 flex gap-4">
+            {[0, 1, 2, 3, 4].map(i => (
+              <div 
+                key={i}
+                className="w-5 h-5 rounded-full bg-[#ff41b4]"
+                style={{
+                  opacity: 0.9 - i * 0.15,
+                  transform: `scale(${1 - i * 0.15})`,
+                  animation: `pulse ${0.3 + i * 0.1}s infinite`,
+                  boxShadow: '0 0 20px #ff41b4'
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -1612,40 +1637,6 @@ function ServicesSection() {
               <div className="absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-[#00d9ff]/60" />
               <div className="absolute -bottom-1 -left-1 w-4 h-4 border-b-2 border-l-2 border-[#ff41b4]/60" />
               <div className="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-[#ff41b4]/60" />
-            </div>
-            
-            {/* Profile Photo Placeholder */}
-            <div className="relative max-w-[180px] mx-auto mb-6">
-              {/* Decorative frame */}
-              <div className="relative aspect-square rounded-full border-2 border-[#00d9ff]/40 
-                             bg-[#0d0618]/80 backdrop-blur-sm overflow-hidden
-                             shadow-[0_0_25px_rgba(0,217,255,0.2),inset_0_0_30px_rgba(0,217,255,0.1)]
-                             group">
-                {/* Inner decorative rings */}
-                <div className="absolute inset-2 rounded-full border border-[#00d9ff]/20" />
-                <div className="absolute inset-4 rounded-full border border-[#ff41b4]/10" />
-                
-                {/* Placeholder icon */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <svg 
-                    className="w-16 h-16 text-[#00d9ff]/30" 
-                    fill="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                  </svg>
-                </div>
-                
-                {/* Scan line effect */}
-                <div className="absolute inset-0 opacity-30 pointer-events-none"
-                     style={{
-                       background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,217,255,0.03) 2px, rgba(0,217,255,0.03) 4px)'
-                     }} />
-              </div>
-              
-              {/* Animated ring around photo */}
-              <div className="absolute -inset-1 rounded-full border border-[#00d9ff]/20 animate-pulse" 
-                   style={{ animationDuration: '2s' }} />
             </div>
             
             {/* Name with Tron Blue styling */}

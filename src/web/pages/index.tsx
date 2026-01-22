@@ -48,8 +48,8 @@ const PROJECTS = [
     polycount: "Optimized",
     textures: "Custom PBR",
     rigged: "In Progress",
-    description: "✨ Original character design featuring intricate golden details, flowing robes, and mystical aesthetic. A showcase of stylized 3D artistry!",
-    status: "featured",
+    description: "Original character design featuring intricate details, flowing robes, and mystical aesthetic. A showcase of stylized 3D artistry!",
+    status: "wip",
     image: "./fantasy-character.png"
   },
   {

@@ -43,6 +43,17 @@ const BOOT_SEQUENCE = [
 const PROJECTS = [
   {
     id: 1,
+    title: "FANTASY CHARACTER MODEL",
+    techSpecs: "Blender | PBR Texturing | Game-Ready",
+    polycount: "Optimized",
+    textures: "Custom PBR",
+    rigged: "In Progress",
+    description: "✨ Original character design featuring intricate golden details, flowing robes, and mystical aesthetic. A showcase of stylized 3D artistry!",
+    status: "featured",
+    image: "./fantasy-character.png"
+  },
+  {
+    id: 2,
     title: "GOAT CHARACTER V1",
     techSpecs: "Blender | Unreal Engine | Game-Ready",
     polycount: "???",
@@ -52,7 +63,7 @@ const PROJECTS = [
     status: "wip"
   },
   {
-    id: 2,
+    id: 3,
     title: "ENVIRONMENT PACK",
     techSpecs: "Blender | Unity | Modular",
     polycount: "???",
@@ -62,7 +73,7 @@ const PROJECTS = [
     status: "coming"
   },
   {
-    id: 3,
+    id: 4,
     title: "CHARACTER RIGGING DEMO",
     techSpecs: "Blender | Maya | Animation-Ready",
     polycount: "???",
@@ -72,7 +83,7 @@ const PROJECTS = [
     status: "coming"
   },
   {
-    id: 4,
+    id: 5,
     title: "UNREAL ENGINE REAL-TIME",
     techSpecs: "Unreal Engine 5 | Nanite | Lumen",
     polycount: "∞",
@@ -226,6 +237,9 @@ function ProjectModal({ project, onClose, wireframeMode, onToggleWireframe }: {
   onToggleWireframe: () => void;
 }) {
   if (!project) return null;
+  
+  const hasImage = 'image' in project && project.image;
+  const isFeatured = project.status === "featured";
 
   return (
     <div 
@@ -233,12 +247,20 @@ function ProjectModal({ project, onClose, wireframeMode, onToggleWireframe }: {
       onClick={onClose}
     >
       <div 
-        className="relative w-full max-w-4xl bg-[#0d0618]/95 border border-[#ff41b4]/40 rounded-xl overflow-hidden"
+        className={`relative w-full max-w-4xl bg-[#0d0618]/95 border rounded-xl overflow-hidden
+                    ${isFeatured ? 'border-[#ffd700]/50' : 'border-[#ff41b4]/40'}`}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[#ff41b4]/20">
-          <h3 className="font-mono text-[#ff41b4] text-xl">{project.title}</h3>
+        <div className={`flex items-center justify-between p-4 border-b ${isFeatured ? 'border-[#ffd700]/20' : 'border-[#ff41b4]/20'}`}>
+          <div className="flex items-center gap-3">
+            <h3 className={`font-mono text-xl ${isFeatured ? 'text-[#ffd700]' : 'text-[#ff41b4]'}`}>{project.title}</h3>
+            {isFeatured && (
+              <span className="px-2 py-0.5 text-[10px] font-mono text-[#1a0b2e] bg-gradient-to-r from-[#ffd700] to-[#ff41b4] rounded-full">
+                ✨ FEATURED
+              </span>
+            )}
+          </div>
           <button
             onClick={onClose}
             aria-label="Close project modal"
@@ -250,32 +272,42 @@ function ProjectModal({ project, onClose, wireframeMode, onToggleWireframe }: {
         
         {/* Content */}
         <div className="grid md:grid-cols-2 gap-6 p-6">
-          {/* 3D Viewer Area */}
+          {/* Image or 3D Viewer Area */}
           <div className="aspect-square bg-[#1a0b2e] rounded-lg border border-[#ff41b4]/20 relative overflow-hidden">
-            <Canvas camera={{ position: [0, 0, 3], fov: 50 }}>
-              <ambientLight intensity={0.5} />
-              <pointLight position={[5, 5, 5]} intensity={1} color={TERMINAL_GREEN} />
-              <Float speed={2} rotationIntensity={0.5}>
-                <mesh>
-                  <dodecahedronGeometry args={[1, 0]} />
-                  {wireframeMode ? (
-                    <meshBasicMaterial color={TERMINAL_GREEN} wireframe />
-                  ) : (
-                    <meshStandardMaterial color={TERMINAL_GREEN} metalness={0.5} roughness={0.3} />
-                  )}
-                </mesh>
-              </Float>
-              <Stars radius={50} depth={20} count={1000} factor={2} fade />
-            </Canvas>
-            
-            {/* Wireframe Toggle */}
-            <button
-              onClick={onToggleWireframe}
-              className="absolute bottom-4 right-4 px-4 py-2 font-mono text-xs text-[#ff41b4] border border-[#ff41b4]/50 
-                         bg-[#0d0618]/80 hover:bg-[#ff41b4]/20 rounded transition-all"
-            >
-              {wireframeMode ? '[ SOLID VIEW ]' : '[ WIREFRAME ]'}
-            </button>
+            {hasImage ? (
+              <img 
+                src={project.image as string} 
+                alt={project.title}
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <>
+                <Canvas camera={{ position: [0, 0, 3], fov: 50 }}>
+                  <ambientLight intensity={0.5} />
+                  <pointLight position={[5, 5, 5]} intensity={1} color={TERMINAL_GREEN} />
+                  <Float speed={2} rotationIntensity={0.5}>
+                    <mesh>
+                      <dodecahedronGeometry args={[1, 0]} />
+                      {wireframeMode ? (
+                        <meshBasicMaterial color={TERMINAL_GREEN} wireframe />
+                      ) : (
+                        <meshStandardMaterial color={TERMINAL_GREEN} metalness={0.5} roughness={0.3} />
+                      )}
+                    </mesh>
+                  </Float>
+                  <Stars radius={50} depth={20} count={1000} factor={2} fade />
+                </Canvas>
+                
+                {/* Wireframe Toggle */}
+                <button
+                  onClick={onToggleWireframe}
+                  className="absolute bottom-4 right-4 px-4 py-2 font-mono text-xs text-[#ff41b4] border border-[#ff41b4]/50 
+                             bg-[#0d0618]/80 hover:bg-[#ff41b4]/20 rounded transition-all"
+                >
+                  {wireframeMode ? '[ SOLID VIEW ]' : '[ WIREFRAME ]'}
+                </button>
+              </>
+            )}
           </div>
           
           {/* Project Info */}
@@ -319,6 +351,8 @@ function ProjectCapsule({ project, delay, onSelect }: {
   const [isHovered, setIsHovered] = useState(false);
   const isComingSoon = project.status === "coming";
   const isWip = project.status === "wip";
+  const isFeatured = project.status === "featured";
+  const hasImage = 'image' in project && project.image;
   
   return (
     <div
@@ -334,11 +368,27 @@ function ProjectCapsule({ project, delay, onSelect }: {
       {/* Glass morphism container */}
       <div className={`relative p-6 rounded-xl border transition-all duration-500
                        bg-[#0d0618]/40 backdrop-blur-md
-                       ${isHovered 
-                         ? 'border-[#ff41b4]/80 shadow-[0_0_40px_rgba(255,65,180,0.4)]' 
-                         : 'border-[#ff41b4]/30 shadow-[0_0_20px_rgba(255,65,180,0.1)]'}`}>
+                       ${isFeatured 
+                         ? (isHovered 
+                             ? 'border-[#ffd700]/80 shadow-[0_0_50px_rgba(255,215,0,0.5)]' 
+                             : 'border-[#ffd700]/50 shadow-[0_0_30px_rgba(255,215,0,0.3)]')
+                         : (isHovered 
+                             ? 'border-[#ff41b4]/80 shadow-[0_0_40px_rgba(255,65,180,0.4)]' 
+                             : 'border-[#ff41b4]/30 shadow-[0_0_20px_rgba(255,65,180,0.1)]')}`}>
         
         {/* Status Badge */}
+        {isFeatured && (
+          <div className="absolute -top-2 -right-2 z-20">
+            <div className="relative px-3 py-1 font-mono text-[10px] text-[#1a0b2e] bg-gradient-to-r from-[#ffd700] to-[#ff41b4] rounded-full 
+                           shadow-[0_0_20px_rgba(255,215,0,0.6)]">
+              <span className="relative flex items-center gap-1.5">
+                <span className="text-sm">✨</span>
+                FEATURED WORK
+              </span>
+            </div>
+          </div>
+        )}
+        
         {isWip && (
           <div className="absolute -top-2 -right-2 z-20">
             <div className="relative px-3 py-1 font-mono text-[10px] text-[#1a0b2e] bg-[#ff41b4] rounded-full 
@@ -363,18 +413,27 @@ function ProjectCapsule({ project, delay, onSelect }: {
           </div>
         )}
         
-        {/* Mini 3D preview */}
+        {/* Mini 3D preview or Image */}
         <div className="w-full aspect-video bg-[#1a0b2e] rounded-lg mb-4 overflow-hidden relative">
-          <Canvas camera={{ position: [0, 0, 2.5], fov: 50 }}>
-            <ambientLight intensity={0.4} />
-            <pointLight position={[3, 3, 3]} intensity={0.8} color={TERMINAL_GREEN} />
-            <Float speed={isHovered ? 0.5 : 2} rotationIntensity={isHovered ? 0.2 : 0.5}>
-              <mesh rotation={[0.5, 0, 0]}>
-                <icosahedronGeometry args={[0.8, 1]} />
-                <meshBasicMaterial color={TERMINAL_GREEN} wireframe opacity={isComingSoon ? 0.5 : 1} transparent />
-              </mesh>
-            </Float>
-          </Canvas>
+          {hasImage ? (
+            <img 
+              src={project.image as string} 
+              alt={project.title}
+              className={`w-full h-full object-cover object-top transition-transform duration-500
+                          ${isHovered ? 'scale-110' : 'scale-100'}`}
+            />
+          ) : (
+            <Canvas camera={{ position: [0, 0, 2.5], fov: 50 }}>
+              <ambientLight intensity={0.4} />
+              <pointLight position={[3, 3, 3]} intensity={0.8} color={TERMINAL_GREEN} />
+              <Float speed={isHovered ? 0.5 : 2} rotationIntensity={isHovered ? 0.2 : 0.5}>
+                <mesh rotation={[0.5, 0, 0]}>
+                  <icosahedronGeometry args={[0.8, 1]} />
+                  <meshBasicMaterial color={TERMINAL_GREEN} wireframe opacity={isComingSoon ? 0.5 : 1} transparent />
+                </mesh>
+              </Float>
+            </Canvas>
+          )}
           
           {/* Coming soon overlay */}
           {isComingSoon && (
